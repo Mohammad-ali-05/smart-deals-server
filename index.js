@@ -59,6 +59,14 @@ async function run() {
             res.send(result)
         });
 
+        app.delete("/products/:id", async (req, res) => {
+            const { id } = req.params;
+            const query = { _id: new ObjectId(id) };
+            const result = await productsCollection.deleteOne(query);
+
+            res.send(result);
+        });
+
         /* Bids API's */
     } finally {
         /*   Ensures that the client will close when you finish/error
