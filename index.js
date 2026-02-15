@@ -1,5 +1,5 @@
 const express = require("express");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const cors = require("cors");
 const app = express();
 const port = process.env.PORT || 3000;
@@ -33,19 +33,23 @@ async function run() {
         );
 
         // Getting Database
-        const db = client.db("smartDeals")
+        const db = client.db("smartDeals");
 
         // Getting Collections
-        const products = db.collection("products")
-        const bids = db.collection("bids")
+        const productsCollection = db.collection("products");
+        const bidsCollection = db.collection("bids");
 
         /* Products API's */
+        app.post("/products", async (req, res) => {
+            const newProduct = req.body;
+            const result = await productsCollection.insertOne(newProduct);
 
+            res.send(result);
+        });
+        
         /* Bids API's */
-
-
     } finally {
-      /*   Ensures that the client will close when you finish/error
+        /*   Ensures that the client will close when you finish/error
         await client.close(); */
     }
 }
