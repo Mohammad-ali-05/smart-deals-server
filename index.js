@@ -46,7 +46,19 @@ async function run() {
 
             res.send(result);
         });
-        
+
+        app.patch("/products/:id", async (req, res) => {
+            const { id } = req.params;
+            const updatedProducts = req.body
+            const query = { _id: new ObjectId(id) };
+            const update = {
+                $set: { name: updatedProducts.name, price: updatedProducts.price },
+            };
+            const result = await productsCollection.updateOne(query, update)
+
+            res.send(result)
+        });
+
         /* Bids API's */
     } finally {
         /*   Ensures that the client will close when you finish/error
