@@ -40,6 +40,13 @@ async function run() {
         const bidsCollection = db.collection("bids");
 
         /* Products API's */
+        app.get("/products", async (req, res) => {
+            const cursor = productsCollection.find({});
+            const result = await cursor.toArray();
+
+            res.send(result);
+        });
+
         app.post("/products", async (req, res) => {
             const newProduct = req.body;
             const result = await productsCollection.insertOne(newProduct);
@@ -49,14 +56,17 @@ async function run() {
 
         app.patch("/products/:id", async (req, res) => {
             const { id } = req.params;
-            const updatedProducts = req.body
+            const updatedProducts = req.body;
             const query = { _id: new ObjectId(id) };
             const update = {
-                $set: { name: updatedProducts.name, price: updatedProducts.price },
+                $set: {
+                    name: updatedProducts.name,
+                    price: updatedProducts.price,
+                },
             };
-            const result = await productsCollection.updateOne(query, update)
+            const result = await productsCollection.updateOne(query, update);
 
-            res.send(result)
+            res.send(result);
         });
 
         app.delete("/products/:id", async (req, res) => {
