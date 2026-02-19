@@ -100,6 +100,14 @@ async function run() {
             res.send(result)
         })
 
+        app.delete("/bids/:id", async (req, res) => {
+            const { id } = req.params
+            const query = {_id: new ObjectId(id)}
+            const result = await bidsCollection.deleteOne(query)
+
+            res.send(result)
+        })
+
 
     } finally {
         /*   Ensures that the client will close when you finish/error
