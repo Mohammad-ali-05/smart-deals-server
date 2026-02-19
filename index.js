@@ -48,12 +48,12 @@ async function run() {
         });
 
         app.get("/products/:id", async (req, res) => {
-            const { id } = req.params
-            const query = { _id: new ObjectId(id) }
-            const result = await productsCollection.findOne(query)
+            const { id } = req.params;
+            const query = { _id: new ObjectId(id) };
+            const result = await productsCollection.findOne(query);
 
-            res.send(result)
-        })
+            res.send(result);
+        });
 
         app.post("/products", async (req, res) => {
             const newProduct = req.body;
@@ -86,6 +86,14 @@ async function run() {
         });
 
         /* Bids API's */
+        app.get("/bids", async (req, res) => {
+            const cursor = bidsCollection.find({})
+            const bids = await cursor.toArray()
+
+            res.send(bids)
+        })
+
+
     } finally {
         /*   Ensures that the client will close when you finish/error
         await client.close(); */
