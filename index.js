@@ -93,6 +93,13 @@ async function run() {
             res.send(bids)
         })
 
+        app.post("/bids", async (req, res) => {
+            const newBid = req.body
+            const result = await bidsCollection.insertOne(newBid)
+
+            res.send(result)
+        })
+
 
     } finally {
         /*   Ensures that the client will close when you finish/error
