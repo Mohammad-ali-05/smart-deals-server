@@ -38,6 +38,25 @@ async function run() {
         // Getting Collections
         const productsCollection = db.collection("products");
         const bidsCollection = db.collection("bids");
+        const userCollection = db.collection("users");
+
+        /* Users API's */
+        app.post("/users", async (req, res) => {
+            const newUser = req.body;
+            const email = req.body.email;
+            const query = { email: email };
+            /* Finding user */
+            const ifUserExist = await userCollection.findOne(query);
+
+            /* Checking if user exist */
+            if (ifUserExist) {
+                res.send({ message: "User already exist" });
+            } else {
+                /* If user doesn't exist save it to the database */
+                const result = await userCollection.insertOne(newUser);
+                res.send(result);
+            }
+        });
 
         /* Products API's */
         app.get("/products", async (req, res) => {
@@ -87,28 +106,26 @@ async function run() {
 
         /* Bids API's */
         app.get("/bids", async (req, res) => {
-            const cursor = bidsCollection.find({})
-            const bids = await cursor.toArray()
+            const cursor = bidsCollection.find({});
+            const bids = await cursor.toArray();
 
-            res.send(bids)
-        })
+            res.send(bids);
+        });
 
         app.post("/bids", async (req, res) => {
-            const newBid = req.body
-            const result = await bidsCollection.insertOne(newBid)
+            const newBid = req.body;
+            const result = await bidsCollection.insertOne(newBid);
 
-            res.send(result)
-        })
+            res.send(result);
+        });
 
         app.delete("/bids/:id", async (req, res) => {
-            const { id } = req.params
-            const query = {_id: new ObjectId(id)}
-            const result = await bidsCollection.deleteOne(query)
+            const { id } = req.params;
+            const query = { _id: new ObjectId(id) };
+            const result = await bidsCollection.deleteOne(query);
 
-            res.send(result)
-        })
-
-
+            res.send(result);
+        });
     } finally {
         /*   Ensures that the client will close when you finish/error
         await client.close(); */
