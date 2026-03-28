@@ -59,6 +59,7 @@ async function run() {
         });
 
         /* Products API's */
+        /* All products, search product, and filter products API */
         app.get("/products", async (req, res) => {
             const cursor = productsCollection.find({});
             const result = await cursor.toArray();
@@ -66,6 +67,18 @@ async function run() {
             res.send(result);
         });
 
+        /* Latest product API */
+        app.get("/latest-products", async (req, res) => {
+            const cursor = productsCollection
+                .find()
+                .sort({ created_at: -1 })
+                .limit(6);
+            const result = await cursor.toArray();
+
+            res.send(result);
+        });
+
+        /* Single product API */
         app.get("/products/:id", async (req, res) => {
             const { id } = req.params;
             const query = { _id: new ObjectId(id) };
@@ -74,6 +87,7 @@ async function run() {
             res.send(result);
         });
 
+        /* Post a product API */
         app.post("/products", async (req, res) => {
             const newProduct = req.body;
             const result = await productsCollection.insertOne(newProduct);
@@ -81,6 +95,7 @@ async function run() {
             res.send(result);
         });
 
+        /* Update a product API */
         app.patch("/products/:id", async (req, res) => {
             const { id } = req.params;
             const updatedProducts = req.body;
@@ -96,6 +111,7 @@ async function run() {
             res.send(result);
         });
 
+        /* Delete a product API */
         app.delete("/products/:id", async (req, res) => {
             const { id } = req.params;
             const query = { _id: new ObjectId(id) };
