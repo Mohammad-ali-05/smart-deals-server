@@ -128,11 +128,24 @@ async function run() {
             res.send(bids);
         });
 
+        app.get("/bids/by-product/:productId", async (req, res) => {
+            const id = req.params.productId
+            const productId = new ObjectId(id)
+            const query = {
+                product: productId
+            }
+            const cursor = bidsCollection.find(query).sort({bid_price: -1})
+            const result = await cursor.toArray()
+
+            res.send(result)
+        }) 
+
         app.post("/bids", async (req, res) => {
             const bidData = req.body;
-            /* Converting product_id string into object id */
-            const product_id = new ObjectId(bidData.product_id)
-            const newBid = { ...bidData, product_id }
+            /* Converting product string into object id */
+            const product = new ObjectId(bidData.product)
+            const bid_price = Number(bidData.bid_price)
+            const newBid = { ...bidData, product, bid_price }
             const result = await bidsCollection.insertOne(newBid);
 
             res.send(result);
