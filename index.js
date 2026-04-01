@@ -78,8 +78,8 @@ async function run() {
             res.send(result);
         });
 
-        /* Single product API */
-        app.get("/products/:id", async (req, res) => {
+        /* Product details API */
+        app.get("/product-details/:id", async (req, res) => {
             const { id } = req.params;
             const query = { _id: new ObjectId(id) };
             const result = await productsCollection.findOne(query);
@@ -129,7 +129,10 @@ async function run() {
         });
 
         app.post("/bids", async (req, res) => {
-            const newBid = req.body;
+            const bidData = req.body;
+            /* Converting product_id string into object id */
+            const product_id = new ObjectId(bidData.product_id)
+            const newBid = { ...bidData, product_id }
             const result = await bidsCollection.insertOne(newBid);
 
             res.send(result);
