@@ -122,30 +122,37 @@ async function run() {
 
         /* Bids API's */
         app.get("/bids", async (req, res) => {
-            const cursor = bidsCollection.find({});
+            const { userEmail } = req.query;
+            const query = {};
+
+            if (userEmail) {
+                query.buyer_email = userEmail;
+            }
+
+            const cursor = bidsCollection.find(query);
             const bids = await cursor.toArray();
 
             res.send(bids);
         });
 
         app.get("/bids/by-product/:productId", async (req, res) => {
-            const id = req.params.productId
-            const productId = new ObjectId(id)
+            const id = req.params.productId;
+            const productId = new ObjectId(id);
             const query = {
-                product: productId
-            }
-            const cursor = bidsCollection.find(query).sort({bid_price: -1})
-            const result = await cursor.toArray()
+                product: productId,
+            };
+            const cursor = bidsCollection.find(query).sort({ bid_price: -1 });
+            const result = await cursor.toArray();
 
-            res.send(result)
-        }) 
+            res.send(result);
+        });
 
         app.post("/bids", async (req, res) => {
             const bidData = req.body;
             /* Converting product string into object id */
-            const product = new ObjectId(bidData.product)
-            const bid_price = Number(bidData.bid_price)
-            const newBid = { ...bidData, product, bid_price }
+            const product = new ObjectId(bidData.product);
+            const bid_price = Number(bidData.bid_price);
+            const newBid = { ...bidData, product, bid_price };
             const result = await bidsCollection.insertOne(newBid);
 
             res.send(result);
