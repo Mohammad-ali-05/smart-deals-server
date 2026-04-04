@@ -89,7 +89,11 @@ async function run() {
 
         /* Post a product API */
         app.post("/products", async (req, res) => {
-            const newProduct = req.body;
+            const productData = req.body;
+            const newProduct = {
+                ...productData,
+                created_at: new Date(productData.created_at),
+            };
             const result = await productsCollection.insertOne(newProduct);
 
             res.send(result);
