@@ -5,9 +5,39 @@ const app = express();
 const port = process.env.PORT || 3000;
 require("dotenv").config();
 
-// Middleware
+/* Firebase admin SDk */
+const admin = require("firebase-admin");
+const serviceAccount = require("./smart-deals-firebase-adminsdk.json");
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+});
+
+/* Middleware */
 app.use(cors());
 app.use(express.json());
+
+const verifyFirebaseToken = async (req, res, next) => {
+    /* If header is not available send error status and message */
+    if (!req.headers.authentication) {
+        return res.status(401).send({ message: "Unauthorized access" });
+    }
+    /* Getting the token */
+    const token = req.headers.authentication.split(" ")[1];
+    /* If token is not available send error status and message */
+    if (!token) {
+        return res.status(401).send({ message: "Unauthorized access" });
+    }
+
+    try {
+        const userInfo = await admin.auth().verifyIdToken(token);
+        req.tokenEmail = userInfo.email;
+        next();
+    } catch {
+        return res.status(401).send({ message: "Unauthorized access" });
+    }
+
+    //
+};
 
 // Mongodb URI to connect to mongodb
 const uri = `mongodb+srv://${process.env.SMART_DB_USER}:${process.env.SMART_DB_PASSWORD}@cluster0.onnu8qm.mongodb.net/?appName=Cluster0`;
@@ -125,11 +155,18 @@ async function run() {
         });
 
         /* Bids API's */
-        app.get("/bids", async (req, res) => {
+        /* Bids per user */
+        app.get("/bids", verifyFirebaseToken, async (req, res) => {
             const { userEmail } = req.query;
+            const tokenEmail = req.tokenEmail;
             const query = {};
 
             if (userEmail) {
+                if (userEmail !== tokenEmail) {
+                    return res
+                        .status(403)
+                        .send({ message: "Forbidden access" });
+                }
                 query.buyer_email = userEmail;
             }
 
@@ -139,7 +176,8 @@ async function run() {
             res.send(bids);
         });
 
-        app.get("/bids/by-product/:productId", async (req, res) => {
+        /* Bids by product */
+        app.get("/bids/by-product/:productId", verifyFirebaseToken, async (req, res) => {
             const id = req.params.productId;
             const productId = new ObjectId(id);
             const query = {
@@ -151,6 +189,7 @@ async function run() {
             res.send(result);
         });
 
+        /* Posting new bids */
         app.post("/bids", async (req, res) => {
             const bidData = req.body;
             /* Converting product string into object id */
@@ -162,6 +201,7 @@ async function run() {
             res.send(result);
         });
 
+        /* Deleting a bid */
         app.delete("/bids/:id", async (req, res) => {
             const { id } = req.params;
             const query = { _id: new ObjectId(id) };
