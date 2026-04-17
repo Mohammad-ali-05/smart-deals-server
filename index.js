@@ -1,13 +1,14 @@
 const express = require("express");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
 const app = express();
 const port = process.env.PORT || 3000;
 require("dotenv").config();
 
 /* Firebase admin SDk */
 const admin = require("firebase-admin");
-const serviceAccount = require("./smart-deals-firebase-adminsdk.json");
+const serviceAccount = require("./smart-deals-firebase-admin-sdk.json");
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
 });
@@ -35,8 +36,26 @@ const verifyFirebaseToken = async (req, res, next) => {
     } catch {
         return res.status(401).send({ message: "Unauthorized access" });
     }
+};
 
-    //
+const verifyJWTToken = (req, res, next) => {
+    /* If header is not available send error status and message */
+    if (!req.headers.authentication) {
+        return res.status(401).send({ message: "Unauthorized access" });
+    } /* Getting the token */
+    const token = req.headers.authentication.split(" ")[1];
+    /* If token is not available send error status and message */
+    if (!token) {
+        return res.status(401).send({ message: "Unauthorized access" });
+    }
+    jwt.verify(token, process.env.JWT_SECRET, (error, decoded) => {
+        if (error) {
+            return res.status(401).send({ message: "Unauthorized access" });
+        } else {
+            req.tokenEmail = decoded.email;
+            next();
+        }
+    });
 };
 
 // Mongodb URI to connect to mongodb
@@ -86,6 +105,15 @@ async function run() {
                 const result = await userCollection.insertOne(newUser);
                 res.send(result);
             }
+        });
+
+        /* JWT API's */
+        app.post("/get-token", (req, res) => {
+            const loggedUser = req.body;
+            const token = jwt.sign(loggedUser, process.env.JWT_SECRET, {
+                expiresIn: "1h",
+            });
+            res.send({ token: token });
         });
 
         /* Products API's */
@@ -155,8 +183,8 @@ async function run() {
         });
 
         /* Bids API's */
-        /* Bids per user */
-        app.get("/bids", verifyFirebaseToken, async (req, res) => {
+        // Bids per user API for JWT token
+        app.get("/bids", verifyJWTToken, async (req, res) => {
             const { userEmail } = req.query;
             const tokenEmail = req.tokenEmail;
             const query = {};
@@ -176,18 +204,64 @@ async function run() {
             res.send(bids);
         });
 
-        /* Bids by product */
-        app.get("/bids/by-product/:productId", verifyFirebaseToken, async (req, res) => {
-            const id = req.params.productId;
-            const productId = new ObjectId(id);
-            const query = {
-                product: productId,
-            };
-            const cursor = bidsCollection.find(query).sort({ bid_price: -1 });
-            const result = await cursor.toArray();
+        /* // Bids per user API for firebase token
+        app.get("/bids", verifyFirebaseToken, async (req, res) => {
+            const { userEmail } = req.query;
+            const tokenEmail = req.tokenEmail;
+            const query = {};
 
-            res.send(result);
-        });
+            if (userEmail) {
+                if (userEmail !== tokenEmail) {
+                    return res
+                        .status(403)
+                        .send({ message: "Forbidden access" });
+                }
+                query.buyer_email = userEmail;
+            }
+
+            const cursor = bidsCollection.find(query);
+            const bids = await cursor.toArray();
+
+            res.send(bids);
+        }); */
+
+        // Bids by product API for JWT token
+        app.get(
+            "/bids/by-product/:productId",
+            verifyJWTToken,
+            async (req, res) => {
+                const id = req.params.productId;
+                const productId = new ObjectId(id);
+                const query = {
+                    product: productId,
+                };
+                const cursor = bidsCollection
+                    .find(query)
+                    .sort({ bid_price: -1 });
+                const result = await cursor.toArray();
+
+                res.send(result);
+            },
+        );
+
+        /* // Bids by product API for firebase token
+        app.get(
+            "/bids/by-product/:productId",
+            verifyFirebaseToken,
+            async (req, res) => {
+                const id = req.params.productId;
+                const productId = new ObjectId(id);
+                const query = {
+                    product: productId,
+                };
+                const cursor = bidsCollection
+                    .find(query)
+                    .sort({ bid_price: -1 });
+                const result = await cursor.toArray();
+
+                res.send(result);
+            },
+        ); */
 
         /* Posting new bids */
         app.post("/bids", async (req, res) => {
