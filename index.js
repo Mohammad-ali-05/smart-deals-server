@@ -19,11 +19,12 @@ app.use(express.json());
 
 const verifyFirebaseToken = async (req, res, next) => {
     /* If header is not available send error status and message */
-    if (!req.headers.authentication) {
+    console.log(req.headers.authorization)
+    if (!req.headers.authorization) {
         return res.status(401).send({ message: "Unauthorized access" });
     }
     /* Getting the token */
-    const token = req.headers.authentication.split(" ")[1];
+    const token = req.headers.authorization.split(" ")[1];
     /* If token is not available send error status and message */
     if (!token) {
         return res.status(401).send({ message: "Unauthorized access" });
@@ -40,10 +41,11 @@ const verifyFirebaseToken = async (req, res, next) => {
 
 const verifyJWTToken = (req, res, next) => {
     /* If header is not available send error status and message */
-    if (!req.headers.authentication) {
+    if (!req.headers.authorization) {
         return res.status(401).send({ message: "Unauthorized access" });
-    } /* Getting the token */
-    const token = req.headers.authentication.split(" ")[1];
+    }
+    /* Getting the token */
+    const token = req.headers.authorization.split(" ")[1];
     /* If token is not available send error status and message */
     if (!token) {
         return res.status(401).send({ message: "Unauthorized access" });
@@ -146,7 +148,7 @@ async function run() {
         });
 
         /* Post a product API */
-        app.post("/products", async (req, res) => {
+        app.post("/products", verifyFirebaseToken, async (req, res) => {
             const productData = req.body;
             const newProduct = {
                 ...productData,
@@ -184,10 +186,36 @@ async function run() {
 
         /* Bids API's */
         // Bids per user API for JWT token
-        app.get("/bids", verifyJWTToken, async (req, res) => {
+        // app.get("/bids", verifyJWTToken, async (req, res) => {
+        //     const { userEmail } = req.query;
+        //     const tokenEmail = req.tokenEmail;
+        //     const query = {};
+
+        //     if (userEmail) {
+        //         if (userEmail !== tokenEmail) {
+        //             return res
+        //                 .status(403)
+        //                 .send({ message: "Forbidden access" });
+        //         }
+        //         query.buyer_email = userEmail;
+        //     }
+
+        //     const cursor = bidsCollection.find(query);
+        //     const bids = await cursor.toArray();
+
+        //     res.send(bids);
+        // });
+
+        // Bids per user API for firebase token
+        app.get("/bids", verifyFirebaseToken, async (req, res) => {
             const { userEmail } = req.query;
             const tokenEmail = req.tokenEmail;
+            console.log(tokenEmail, "ok", userEmail);
             const query = {};
+
+            if (!userEmail) {
+                return res.status(403).send({ message: "Forbidden access" });
+            }
 
             if (userEmail) {
                 if (userEmail !== tokenEmail) {
@@ -204,28 +232,7 @@ async function run() {
             res.send(bids);
         });
 
-        /* // Bids per user API for firebase token
-        app.get("/bids", verifyFirebaseToken, async (req, res) => {
-            const { userEmail } = req.query;
-            const tokenEmail = req.tokenEmail;
-            const query = {};
-
-            if (userEmail) {
-                if (userEmail !== tokenEmail) {
-                    return res
-                        .status(403)
-                        .send({ message: "Forbidden access" });
-                }
-                query.buyer_email = userEmail;
-            }
-
-            const cursor = bidsCollection.find(query);
-            const bids = await cursor.toArray();
-
-            res.send(bids);
-        }); */
-
-        // Bids by product API for JWT token
+        /* // Bids by product API for JWT token
         app.get(
             "/bids/by-product/:productId",
             verifyJWTToken,
@@ -242,9 +249,9 @@ async function run() {
 
                 res.send(result);
             },
-        );
+        ); */
 
-        /* // Bids by product API for firebase token
+        // Bids by product API for firebase token
         app.get(
             "/bids/by-product/:productId",
             verifyFirebaseToken,
@@ -261,7 +268,7 @@ async function run() {
 
                 res.send(result);
             },
-        ); */
+        );
 
         /* Posting new bids */
         app.post("/bids", async (req, res) => {
