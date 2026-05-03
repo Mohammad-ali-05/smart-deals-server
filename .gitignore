@@ -1,3 +1,5 @@
 node_modules
 .env
 smart-deals-firebase-admin-sdk.json
+# File that encoded smart-deals-firebase-admin-sdk.json
+encoded.js

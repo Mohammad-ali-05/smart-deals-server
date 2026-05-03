@@ -8,7 +8,8 @@ require("dotenv").config();
 
 /* Firebase admin SDk */
 const admin = require("firebase-admin");
-const serviceAccount = require("./smart-deals-firebase-admin-sdk.json");
+const decoded = Buffer.from(process.env.FIREBASE_ADMIN_KEY, "base64").toString("utf-8")
+const serviceAccount = JSON.parse(decoded)
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
 });
@@ -19,7 +20,6 @@ app.use(express.json());
 
 const verifyFirebaseToken = async (req, res, next) => {
     /* If header is not available send error status and message */
-    console.log(req.headers.authorization)
     if (!req.headers.authorization) {
         return res.status(401).send({ message: "Unauthorized access" });
     }
@@ -78,7 +78,7 @@ async function run() {
         await client.connect();
 
         // Send a ping to confirm a successful connection
-        await client.db("admin").command({ ping: 1 });
+        // await client.db("admin").command({ ping: 1 });
         console.log(
             "Pinged your deployment. You successfully connected to MongoDB!",
         );
@@ -210,7 +210,6 @@ async function run() {
         app.get("/bids", verifyFirebaseToken, async (req, res) => {
             const { userEmail } = req.query;
             const tokenEmail = req.tokenEmail;
-            console.log(tokenEmail, "ok", userEmail);
             const query = {};
 
             if (!userEmail) {
